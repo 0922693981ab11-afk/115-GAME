@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>崑山115年企研所 - 新生共識營【名師解碼・團隊接力】</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            background-image: linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #334155;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overscroll-behavior: none;
+        }
+
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 1); box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #0284c7, #3b82f6); color: white; transition: all 0.2s ease; }
+        .btn-primary:active { transform: scale(0.95); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+        
+        /* 編輯器 */
+        .editor-content { min-height: 150px; outline: none; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; background: white; }
+        .editor-btn { padding: 4px 8px; background: #e2e8f0; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .editor-btn:hover { background: #cbd5e1; }
+        .editor-content ul { list-style-type: disc; padding-left: 20px; }
+        .editor-content ol { list-style-type: decimal; padding-left: 20px; }
+        .editor-content h3 { font-size: 1.1em; font-weight: bold; margin-top: 5px; color: #1e40af; }
+
+        /* 卡片特效 */
+        .perspective-1000 { perspective: 1000px; }
+        .memory-card { transform: scale(1); transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+        .memory-card:active { transform: scale(0.95); }
+        .memory-card.flipped { transform: rotateY(180deg); }
+        .front-face, .back-face { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .front-face { transform: rotateY(180deg); background: #ffffff; border: 2px solid #bae6fd; }
+        .back-face { background: linear-gradient(135deg, #1e3a8a, #3b82f6); border: 2px solid #93c5fd; display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; }
+        
+        /* 炸彈與爆炸 */
+        @keyframes bomb-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); color: #ef4444; } }
+        .timer-danger .bomb-icon, .timer-danger .time-text { color: #dc2626; animation: bomb-pulse 0.5s infinite; }
+        @keyframes explosion { 0% { transform: scale(0.5); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
+        .explode-effect { position: absolute; width: 100px; height: 100px; background: radial-gradient(circle, #fbbf24 0%, #ef4444 50%, transparent 70%); border-radius: 50%; animation: explosion 0.8s ease-out forwards; pointer-events: none; z-index: 999; }
+        
+        /* 隱藏捲軸 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+    <!-- ========================================== -->
+    <!-- 1. 設定畫面 -->
+    <!-- ========================================== -->
+    <div id="setup-screen" class="flex flex-col h-screen overflow-y-auto pb-10">
+        <header class="glass-panel p-4 text-center border-b border-slate-200 sticky top-0 z-10">
+            <h1 class="text-2xl font-black text-slate-800 tracking-wide">⚙️ 崑山115年企研所 - 新生共識營</h1>
+        </header>
+
+        <main class="flex-grow container mx-auto p-4 flex flex-col md:flex-row gap-6">
+            <!-- 左側：資料新增與匯出入 -->
+            <div class="w-full md:w-1/3 glass-panel p-5 rounded-2xl h-fit shadow-sm">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2 text-blue-700">➕ 新增教授資料</h2>
+                <input type="text" id="prof-name-input" placeholder="老師姓名" class="w-full p-2 mb-3 rounded-lg border focus:ring-2 focus:ring-blue-400">
+                <input type="text" id="prof-subject-input" placeholder="專長領域" class="w-full p-2 mb-3 rounded-lg border focus:ring-2 focus:ring-blue-400">
+                <input type="file" id="prof-image-input" accept="image/*" class="w-full text-sm mb-2">
+                <div id="image-preview-container" class="hidden mb-3 flex justify-center">
+                    <img id="image-preview" src="" class="h-20 w-20 object-contain bg-slate-50 border p-1 rounded-lg">
+                </div>
+                <button id="add-prof-btn" class="w-full btn-primary font-bold py-3 rounded-xl shadow-md">加入資料庫</button>
+                
+                <div class="mt-6 pt-4 border-t border-slate-200">
+                    <h2 class="font-bold mb-2 text-slate-700">📂 完整匯出匯入</h2>
+                    <div class="flex gap-2 mb-3">
+                        <button id="export-btn" class="flex-1 bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm border border-slate-300 hover:bg-slate-300">⬇️ 匯出設定</button>
+                        <label class="flex-1 bg-green-100 text-green-700 font-bold py-2 rounded-xl text-sm border border-green-300 text-center hover:bg-green-200 cursor-pointer flex items-center justify-center m-0">
+                            ⬆️ 匯入設定
+                            <input type="file" id="import-input" accept=".json" class="hidden">
+                        </label>
+                    </div>
+                    <button id="load-default-btn" class="w-full bg-indigo-50 text-indigo-600 font-bold py-2 rounded-xl text-sm border border-indigo-200 hover:bg-indigo-100 shadow-sm transition hover:scale-[1.02]">載入預設測試名單</button>
+                </div>
+            </div>
+
+            <!-- 右側：名單管理與規則編輯 -->
+            <div class="w-full md:w-2/3 flex flex-col gap-4">
+                <div class="glass-panel p-4 rounded-2xl flex flex-col gap-3 border-l-4 border-l-red-500 shadow-sm">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-lg">⏳ 闖關總時間</h2>
+                        <div class="flex items-center">
+                            <input type="number" id="timer-input" value="15" class="w-16 p-1 text-center text-xl font-bold border rounded-lg">
+                            <span class="ml-2 font-bold text-slate-600">分鐘</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col max-h-[30vh]">
+                    <div class="flex justify-between items-end mb-2 border-b pb-2">
+                        <h2 class="font-bold text-blue-700">📋 目前資料庫 (<span id="prof-count">0</span>)</h2>
+                        <button id="clear-all-btn" class="text-red-500 text-xs font-bold hover:text-red-700">清空全部</button>
+                    </div>
+                    <div class="text-center text-slate-400 py-4 text-sm" id="empty-state">資料庫為空，請新增或匯入</div>
+                    <div id="prof-list" class="overflow-y-auto space-y-2 pr-2 pb-2"></div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl shadow-sm border-l-4 border-l-blue-500">
+                    <h2 class="font-bold text-slate-800 mb-2">📜 遊戲規則編輯</h2>
+                    <div class="flex gap-2 mb-2 p-1.5 bg-slate-100 rounded-lg items-center">
+                        <button class="editor-btn" onclick="document.execCommand('bold', false, null); saveSystemState();">粗體</button>
+                        <button class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null); saveSystemState();">項目</button>
+                        <div class="h-4 w-px bg-slate-300 mx-1"></div>
+                        <label class="text-xs font-bold text-slate-600">字體顏色:</label>
+                        <input type="color" onchange="document.execCommand('foreColor', false, this.value); saveSystemState();" class="w-6 h-6 cursor-pointer border border-slate-300 rounded p-0">
+                    </div>
+                    <div id="rule-editor" contenteditable="true" class="editor-content"></div>
+                </div>
+
+                <button id="enter-game-btn" class="w-full btn-primary text-xl font-black py-4 rounded-2xl tracking-wide shadow-lg hover:scale-[1.02] transform transition">🚀 進入挑戰者大廳</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 1.5 挑戰者大廳 & 排行榜 -->
+    <!-- ========================================== -->
+    <div id="player-screen" class="hidden flex-col h-screen overflow-y-auto pb-10 bg-slate-50">
+        <header class="glass-panel p-4 text-center border-b border-slate-200 sticky top-0 z-10">
+            <h1 class="text-2xl font-black text-slate-800 tracking-wide">🏆 崑山115年企研所 - 接力大廳</h1>
+        </header>
+
+        <main class="flex-grow container mx-auto p-4 flex flex-col md:flex-row items-start justify-center gap-6 mt-4">
+            <!-- 左側：輸入隊伍 -->
+            <div class="w-full md:w-1/2 glass-panel p-6 rounded-2xl shadow-xl text-center border-t-4 border-blue-500">
+                <div class="text-6xl mb-4">🧑‍🎓</div>
+                <h2 class="text-2xl font-black text-blue-800 mb-6">準備好團隊接力了嗎？</h2>
+                <div class="mb-6 text-left">
+                    <label class="block text-sm font-bold text-slate-600 mb-2">請輸入您的「組別 / 隊名」：</label>
+                    <input type="text" id="player-name-input" placeholder="例如：第一小隊" class="w-full p-4 rounded-xl border-2 focus:ring-4 focus:ring-blue-300 text-center text-xl font-bold outline-none transition">
+                </div>
+                <button id="submit-player-btn" class="w-full btn-primary font-black py-4 rounded-xl shadow-lg text-xl hover:scale-[1.02] transform transition">進入遊戲說明 🚀</button>
+                <div class="mt-6 pt-4 border-t border-slate-200">
+                    <button id="back-to-setup-from-player" class="w-full bg-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-300 transition text-sm">⚙️ (管理員) 回系統設定</button>
+                </div>
+            </div>
+
+            <!-- 右側：英雄排行榜 -->
+            <div class="w-full md:w-1/2 glass-panel p-6 rounded-2xl shadow-xl border-t-4 border-yellow-400 flex flex-col max-h-[70vh]">
+                <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2">🏅 團隊戰績榜</h2>
+                    <div class="flex gap-2">
+                        <label class="bg-blue-100 text-blue-700 px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-sm font-bold border border-blue-300 hover:bg-blue-200 transition shadow-sm cursor-pointer flex items-center m-0">
+                            ⬆️ 匯入 CSV
+                            <input type="file" id="import-leaderboard-input" accept=".csv" class="hidden">
+                        </label>
+                        <button id="export-leaderboard-btn" class="bg-green-100 text-green-700 px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-sm font-bold border border-green-300 hover:bg-green-200 transition shadow-sm">⬇️ 匯出 CSV</button>
+                        <button id="clear-leaderboard-btn" class="bg-red-100 text-red-700 px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-sm font-bold border border-red-300 hover:bg-red-200 transition shadow-sm">🗑️ 清空</button>
+                    </div>
+                </div>
+                <div class="bg-yellow-50 text-yellow-800 text-xs font-bold p-2 rounded-lg text-center mb-4 border border-yellow-200">
+                    紀錄規則：依據時間內總累積「過關次數(多到少)」進行排名
+                </div>
+                <div id="leaderboard-list" class="space-y-3 overflow-y-auto pr-2 no-scrollbar flex-1">
+                    <!-- 排行榜資料動態生成 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. 遊戲畫面 (極致壓縮頁首尾，放大卡牌) -->
+    <!-- ========================================== -->
+    <div id="game-screen" class="hidden fixed inset-0 flex-col bg-slate-50 z-50 overflow-hidden">
+        
+        <header class="glass-panel p-2 md:p-3 shadow-sm z-20 flex-shrink-0">
+            <div class="container mx-auto flex justify-between items-center px-1 md:px-2">
+                <h1 id="level-title" class="hidden md:block text-xl font-black text-blue-800 truncate">名師解碼・團隊接力</h1>
+                <div class="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+                    <div class="bg-blue-100 px-3 py-1 rounded-xl border border-blue-200 shadow-inner flex items-center">
+                        <div class="font-black text-base md:text-xl flex items-center gap-1 text-blue-800">
+                            <span>🏆 過關:</span> 
+                            <span id="current-score-display" class="text-xl md:text-2xl">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-inner flex items-center">
+                        <div id="timer-container" class="font-black text-lg md:text-2xl flex items-center gap-1">
+                            <span class="bomb-icon text-xl md:text-2xl">⏳</span> 
+                            <span id="timer" class="time-text text-slate-800 font-mono tracking-wider">00:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 w-full p-2 relative z-10 flex flex-col items-center justify-center overflow-hidden">
+            <!-- 手機端 4x5, 電腦端 5x4 排版 -->
+            <div id="game-board" class="w-full h-full max-w-6xl mx-auto grid grid-cols-4 grid-rows-5 md:grid-cols-5 md:grid-rows-4 gap-2 md:gap-3 perspective-1000"></div>
+        </main>
+
+        <footer class="glass-panel p-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-30 flex-shrink-0">
+            <div class="container mx-auto flex justify-center items-center gap-3">
+                <button id="back-to-lobby-btn" class="flex-1 max-w-[120px] bg-slate-200 text-slate-700 py-2 rounded-xl text-xs md:text-sm font-black shadow-sm hover:bg-slate-300">🚪 結束結算</button>
+                <button id="music-toggle-btn" class="flex-1 max-w-[120px] bg-green-100 text-green-700 py-2 rounded-xl text-xs md:text-sm font-black shadow-sm hover:bg-green-200">🔊 音樂: 開</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. 各式彈窗 -->
+    <!-- ========================================== -->
+    <div id="rules-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[60] p-4">
+        <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
+            <div class="bg-indigo-600 p-4 text-center text-white font-black text-xl">📜 遊戲規則說明</div>
+            <div id="rules-display-content" class="p-6 overflow-y-auto flex-1 text-slate-700"></div>
+            <button id="start-countdown-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 text-lg transition">開始計時挑戰</button>
+        </div>
+    </div>
+
+    <div id="info-modal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-[60] p-4">
+        <div class="glass-panel rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl">
+            <div class="text-5xl mb-2">✨</div>
+            <h2 class="text-xl font-bold text-slate-800 mb-3">發現目標！</h2>
+            <div class="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-100">
+                <h3 id="modal-prof-name" class="text-2xl font-black text-blue-700 mb-1"></h3>
+                <div class="h-px w-full bg-blue-200 my-2"></div>
+                <p id="modal-prof-subject" class="text-sm text-slate-600 font-bold"></p>
+            </div>
+            <button id="continue-btn" class="btn-primary font-black py-3 rounded-xl w-full text-lg shadow-md">繼續尋找下一個</button>
+        </div>
+    </div>
+
+    <div id="next-player-modal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center z-[60] p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center border-4 border-green-400 shadow-2xl">
+            <div class="text-6xl mb-2 animate-bounce">🏃‍♂️</div>
+            <h2 class="text-3xl font-black text-green-600 mb-2">過關！換下一棒！</h2>
+            <p class="text-slate-500 mb-6 font-bold">請以最快速度交棒，時間仍在倒數！</p>
+            <button id="next-player-btn" class="bg-green-500 hover:bg-green-600 text-white py-4 rounded-2xl w-full text-xl font-black shadow-lg transition">下一位準備好，繼續挑戰！</button>
+        </div>
+    </div>
+
+    <div id="game-over-modal" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center z-[60] p-4">
+        <div class="bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_40px_rgba(250,204,21,0.6)]">
+            <div class="text-7xl mb-2">⏰</div>
+            <h2 class="text-4xl font-black text-slate-900 mb-4">時間到！</h2>
+            <div class="bg-white/80 rounded-xl p-4 mb-6 shadow-inner">
+                <p class="text-sm font-bold text-slate-600 mb-1">團隊總過關次數</p>
+                <div class="text-4xl font-black text-red-600"><span id="final-score-text"></span> 次</div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button id="final-lobby-btn" class="bg-slate-900 text-white font-black py-4 rounded-2xl w-full text-lg shadow-xl hover:scale-105 transition">返回大廳 (查看排名) 🏆</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系統訊息彈窗 -->
+    <div id="sys-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] p-4 backdrop-blur-sm">
+        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full text-center shadow-xl">
+            <h3 id="sys-msg-text" class="text-lg font-bold text-slate-800 mb-6 leading-relaxed">訊息</h3>
+            <div class="flex gap-3 justify-center">
+                <button id="sys-cancel-btn" class="hidden flex-1 bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition">取消</button>
+                <button id="sys-ok-btn" class="flex-1 btn-primary py-3 rounded-xl font-bold shadow-md transition">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 4. JavaScript 核心邏輯 -->
+    <!-- ========================================== -->
+    <script>
+        let profsData = [];
+        let gameDeck = [];
+        let firstCard = null, secondCard = null, lockBoard = false;
+        let timerInterval, timeRemaining = 900, totalTimeConfig = 900;
+        let isGameRunning = false;
+
+        let leaderboardData = JSON.parse(localStorage.getItem('ksu_relay_leaderboard')) || [];
+        let currentTeamName = "";
+        let teamScore = 0;
+        let pairsMatchedInCurrentRound = 0;
+
+        const ruleEditor = document.getElementById('rule-editor');
+        const setupScreen = document.getElementById('setup-screen');
+        const playerScreen = document.getElementById('player-screen');
+        const gameScreen = document.getElementById('game-screen');
+        let tempImg = null;
+
+        function saveSystemState() {
+            const sysData = {
+                profs: profsData,
+                rules: ruleEditor.innerHTML,
+                gameTime: document.getElementById('timer-input').value
+            };
+            localStorage.setItem('ksu_sys_data', JSON.stringify(sysData));
+        }
+
+        document.getElementById('timer-input').addEventListener('input', saveSystemState);
+        ruleEditor.addEventListener('input', saveSystemState);
+
+        const SoundManager = {
+            on: true,
+            unlocked: false,
+            audioCtx: null,
+            bgmInterval: null,
+            bgmStep: 0,
+            
+            initCtx() {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+            },
+            unlockAll() {
+                this.initCtx();
+                this.unlocked = true;
+            },
+            // Web Audio API Synthesized Light Upbeat Rhythm
+            playBgmStep() {
+                if (!this.on || !isGameRunning || !this.audioCtx) return;
+                const ctx = this.audioCtx;
+                const now = ctx.currentTime;
+                
+                // Light, cheerful bouncy pentatonic melody (C5, E5, G5, A5)
+                const melody = [523.25, 659.25, 783.99, 880.00, 659.25, 783.99, 1046.50, 880.00];
+                const bass = [261.63, 261.63, 329.63, 329.63, 349.23, 349.23, 392.00, 392.00];
+                
+                const step = this.bgmStep % melody.length;
+                
+                // Melody tone
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(melody[step], now);
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+
+                // Bass tone
+                if (this.bgmStep % 2 === 0) {
+                    const bassOsc = ctx.createOscillator();
+                    const bassGain = ctx.createGain();
+                    bassOsc.type = 'sine';
+                    bassOsc.frequency.setValueAtTime(bass[step], now);
+                    bassGain.gain.setValueAtTime(0.09, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    bassOsc.connect(bassGain);
+                    bassGain.connect(ctx.destination);
+                    bassOsc.start(now);
+                    bassOsc.stop(now + 0.24);
+                }
+                
+                this.bgmStep++;
+            },
+            startBGM() {
+                if (!this.on) return;
+                this.initCtx();
+                this.stopBGM();
+                this.bgmStep = 0;
+                // Upbeat tempo ~ 136 BPM (220ms step)
+                this.bgmInterval = setInterval(() => this.playBgmStep(), 220);
+            },
+            stopBGM() {
+                if (this.bgmInterval) {
+                    clearInterval(this.bgmInterval);
+                    this.bgmInterval = null;
+                }
+            },
+            toggleMute() {
+                this.on = !this.on;
+                const btn = document.getElementById('music-toggle-btn');
+                if (this.on) {
+                    btn.innerHTML = '🔊 音樂: 開';
+                    btn.className = 'flex-1 max-w-[120px] bg-green-100 text-green-700 py-2 rounded-xl text-xs md:text-sm font-black shadow-sm hover:bg-green-200';
+                    this.play('flip');
+                    if (isGameRunning) this.startBGM();
+                } else {
+                    btn.innerHTML = '🔇 音樂: 關';
+                    btn.className = 'flex-1 max-w-[120px] bg-slate-200 text-slate-700 py-2 rounded-xl text-xs md:text-sm font-black shadow-sm hover:bg-slate-300';
+                    this.stopBGM();
+                }
+            },
+            play(type) {
+                if (!this.on) return;
+                this.initCtx();
+                const ctx = this.audioCtx;
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                try {
+                    if (type === 'flip') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(400, now);
+                        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.09);
+                    } else if (type === 'match') {
+                        const notes = [523.25, 659.25, 783.99, 1046.50];
+                        notes.forEach((freq, idx) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'triangle';
+                            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                            gain.gain.setValueAtTime(0.12, now + idx * 0.06);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(now + idx * 0.06);
+                            osc.stop(now + idx * 0.06 + 0.26);
+                        });
+                    } else if (type === 'fail') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(220, now);
+                        osc.frequency.linearRampToValueAtTime(130, now + 0.2);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.21);
+                    } else if (type === 'win') {
+                        const cheerNotes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                        cheerNotes.forEach((freq, idx) => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                            gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(now + idx * 0.08);
+                            osc.stop(now + idx * 0.08 + 0.36);
+                        });
+                    } else if (type === 'warn') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(880, now);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.11);
+                    } else if (type === 'explode') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(180, now);
+                        osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.41);
+                    }
+                } catch(e) {}
+            }
+        };
+
+        function showMsg(text, isConfirm = false, onConfirm = null) {
+            const modal = document.getElementById('sys-modal');
+            document.getElementById('sys-msg-text').innerText = text;
+            const cancelBtn = document.getElementById('sys-cancel-btn');
+            const okBtn = document.getElementById('sys-ok-btn');
+            
+            okBtn.onclick = null;
+            cancelBtn.onclick = null;
+            
+            okBtn.onclick = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); if(onConfirm) onConfirm(); };
+            if (isConfirm) {
+                cancelBtn.classList.remove('hidden');
+                cancelBtn.onclick = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+            } else { cancelBtn.classList.add('hidden'); }
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function renderList() {
+            saveSystemState();
+            document.getElementById('prof-count').innerText = profsData.length;
+            const list = document.getElementById('prof-list');
+            const empty = document.getElementById('empty-state');
+            if (profsData.length === 0) { empty.classList.remove('hidden'); list.innerHTML = ''; return; }
+            empty.classList.add('hidden');
+            list.innerHTML = profsData.map((p, i) => `
+                <div class="flex items-center justify-between bg-white p-2 rounded-lg border shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.img}" class="w-10 h-10 object-contain bg-slate-50 border p-0.5 rounded-lg">
+                        <div><div class="font-bold text-sm">${p.name}</div><div class="text-[11px] text-blue-600 font-bold w-40 truncate">${p.subject}</div></div>
+                    </div>
+                    <button class="text-red-500 bg-red-50 p-1.5 rounded-lg text-xs font-bold" onclick="removeProf(${i})">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        window.removeProf = (index) => { profsData.splice(index, 1); renderList(); };
+        document.getElementById('clear-all-btn').onclick = () => { showMsg("確定要清空所有資料庫嗎？", true, () => { profsData = []; renderList(); }); };
+
+        document.getElementById('prof-image-input').onchange = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    let w = img.width, h = img.height, max = 250;
+                    if(w > h) { if(w > max) { h *= max/w; w = max; } } else { if(h > max) { w *= max/h; h = max; } }
+                    canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+                    tempImg = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('image-preview').src = tempImg;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('add-prof-btn').onclick = () => {
+            const name = document.getElementById('prof-name-input').value;
+            const subject = document.getElementById('prof-subject-input').value;
+            if (!name || !subject || !tempImg) return showMsg("請完整填寫並上傳照片");
+            profsData.push({ id: 'p_'+Date.now(), name, subject, img: tempImg });
+            renderList();
+            document.getElementById('prof-name-input').value = ''; document.getElementById('prof-subject-input').value = '';
+            tempImg = null; document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('prof-image-input').value = '';
+            showMsg("新增成功！");
+        };
+
+        document.getElementById('import-input').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    let importedProfs = Array.isArray(data) ? data : (data.profs || data.professors || []);
+                    let importedRules = data.rules || "";
+
+                    if (importedProfs.length === 0 && !importedRules) return showMsg("檔案內沒有資料，或者格式不正確。");
+
+                    profsData = importedProfs;
+                    if (importedRules) ruleEditor.innerHTML = importedRules;
+                    if (data.gameTime) document.getElementById('timer-input').value = data.gameTime;
+                    
+                    renderList(); showMsg("匯入成功！已載入 " + profsData.length + " 位資料。");
+                } catch(err) { showMsg("匯入失敗，請確認檔案格式是否正確。"); }
+                document.getElementById('import-input').value = ''; 
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('export-btn').onclick = () => {
+            try {
+                const data = JSON.stringify({ 
+                    profs: profsData, 
+                    rules: ruleEditor.innerHTML,
+                    gameTime: document.getElementById('timer-input').value
+                });
+                const blob = new Blob([data], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = "ksu_relay_settings.json"; 
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                showMsg("匯出成功！設定檔案已下載。");
+            } catch (err) { showMsg("匯出失敗：" + err.message); }
+        };
+
+        document.getElementById('load-default-btn').onclick = () => {
+            const defs = [
+                { id: 'd1', name: "林所長", subject: "研究所所長", img: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23e0f2fe'/><text y='65' x='20' font-size='50'>👨‍🏫</text></svg>` },
+                { id: 'd2', name: "王教授", subject: "行銷管理", img: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fef08a'/><text y='65' x='20' font-size='50'>👨‍💼</text></svg>` },
+                { id: 'd3', name: "陳教授", subject: "財務管理", img: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23bbf7d0'/><text y='65' x='20' font-size='50'>👩‍💼</text></svg>` },
+                { id: 'd4', name: "李教授", subject: "人力資源", img: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fbcfe8'/><text y='65' x='20' font-size='50'>🧑‍💻</text></svg>` }
+            ];
+            profsData = [...profsData, ...defs]; renderList(); showMsg("已載入預設測試名單！");
+        };
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            if (leaderboardData.length === 0) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-8 font-bold">目前尚無隊伍紀錄</div>';
+                return;
+            }
+            list.innerHTML = leaderboardData.map((entry, index) => {
+                let badge = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-slate-400 text-base ml-1 border-2 rounded-full w-6 h-6 inline-flex items-center justify-center">${index + 1}</span>`;
+                let bgClass = index === 0 ? 'bg-yellow-100 border-yellow-300' : index === 1 ? 'bg-slate-100 border-slate-300' : index === 2 ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100';
+                return `
+                <div class="flex justify-between items-center p-3 rounded-xl border shadow-sm ${bgClass}">
+                    <div class="font-bold text-slate-700 flex items-center gap-3">
+                        <span class="text-2xl w-8 text-center">${badge}</span> 
+                        <span class="truncate max-w-[120px] md:max-w-[200px]">${entry.name}</span>
+                    </div>
+                    <div class="font-black text-blue-600 text-lg">${entry.score} <span class="text-xs text-slate-500">次</span></div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.exportLeaderboardCSV = function(isAuto = false) {
+            if (leaderboardData.length === 0) {
+                if(!isAuto) showMsg("目前沒有任何挑戰者紀錄可匯出！");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "排名,組別 / 隊名,過關總次數\n";
+            leaderboardData.forEach((entry, index) => {
+                let safeName = entry.name.replace(/"/g, '""'); 
+                csvContent += `${index + 1},"${safeName}",${entry.score}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a"); 
+            link.setAttribute("href", encodedUri); 
+            
+            const timestamp = new Date().getTime().toString().slice(-6); 
+            const fileName = isAuto ? `崑山企研所_接力戰績榜_自動備份_${timestamp}.csv` : `崑山企研所_接力戰績榜.csv`;
+            
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            
+            if(!isAuto) showMsg("🏆 戰績榜已成功匯出！(可直接用 Excel 開啟)");
+        };
+
+        document.getElementById('export-leaderboard-btn').onclick = () => window.exportLeaderboardCSV(false);
+
+        document.getElementById('import-leaderboard-input').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const text = ev.target.result;
+                    const lines = text.split('\n');
+                    let newEntries = [];
+                    for(let i = 1; i < lines.length; i++) { 
+                        let line = lines[i].trim();
+                        if(!line) continue;
+                        const match = line.match(/^\d+,"?(.*?)"?,(\d+)$/);
+                        if(match) {
+                            newEntries.push({ name: match[1].replace(/""/g, '"'), score: parseInt(match[2], 10) });
+                        } else {
+                            const parts = line.split(',');
+                            if(parts.length >= 3) {
+                                newEntries.push({ name: parts[1], score: parseInt(parts[2], 10) });
+                            }
+                        }
+                    }
+                    if(newEntries.length > 0) {
+                        leaderboardData = [...leaderboardData, ...newEntries];
+                        const uniqueMap = new Map();
+                        leaderboardData.forEach(item => { 
+                            let existing = uniqueMap.get(item.name);
+                            if(!existing || item.score > existing.score) {
+                                uniqueMap.set(item.name, item); 
+                            }
+                        });
+                        leaderboardData = Array.from(uniqueMap.values());
+                        
+                        leaderboardData.sort((a, b) => b.score - a.score);
+                        localStorage.setItem('ksu_relay_leaderboard', JSON.stringify(leaderboardData));
+                        renderLeaderboard();
+                        showMsg("戰績榜匯入成功！成績已安全合併。");
+                    } else {
+                        showMsg("檔案內找不到有效的成績紀錄！");
+                    }
+                } catch(err) { showMsg("匯入失敗，請確認是否為系統匯出的 CSV 檔案。"); }
+                document.getElementById('import-leaderboard-input').value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('clear-leaderboard-btn').onclick = () => {
+            showMsg("確定要清空英雄排行榜嗎？(清除後無法復原)", true, () => {
+                leaderboardData = []; localStorage.removeItem('ksu_relay_leaderboard');
+                renderLeaderboard(); showMsg("排行榜已成功清空！");
+            });
+        };
+
+        function createExplosion() {
+            const ef = document.createElement('div'); ef.className = 'explode-effect';
+            ef.style.left = `calc(50% - 50px + ${Math.random()*100 - 50}px)`; ef.style.top = `calc(50% - 50px + ${Math.random()*100 - 50}px)`;
+            gameScreen.appendChild(ef); setTimeout(() => ef.remove(), 800);
+        }
+
+        const hideModals = () => { 
+            ['rules-modal', 'info-modal', 'next-player-modal', 'game-over-modal', 'sys-modal'].forEach(id => { 
+                document.getElementById(id).classList.add('hidden'); 
+                document.getElementById(id).classList.remove('flex'); 
+            }); 
+        };
+
+        function triggerGameOver() {
+            isGameRunning = false; SoundManager.stopBGM();
+            clearInterval(timerInterval); lockBoard = true; SoundManager.play('explode');
+            hideModals();
+            
+            for(let i=0; i<5; i++) setTimeout(createExplosion, i * 150);
+            
+            leaderboardData.push({ name: currentTeamName, score: teamScore });
+            leaderboardData.sort((a, b) => b.score - a.score);
+            localStorage.setItem('ksu_relay_leaderboard', JSON.stringify(leaderboardData));
+            
+            try { window.exportLeaderboardCSV(true); } catch(e) { console.error("Auto export failed", e); }
+
+            document.getElementById('final-score-text').innerText = teamScore;
+            setTimeout(() => { 
+                document.getElementById('game-over-modal').classList.remove('hidden'); 
+                document.getElementById('game-over-modal').classList.add('flex'); 
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const container = document.getElementById('timer-container');
+            const mins = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const secs = (timeRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `${mins}:${secs}`;
+            
+            if (timeRemaining <= 10 && timeRemaining > 0) {
+                container.classList.add('timer-danger'); 
+                if (timeRemaining % 2 === 0) SoundManager.play('warn');
+            } else { 
+                container.classList.remove('timer-danger'); 
+            }
+        }
+
+        function startGame() {
+            isGameRunning = true; SoundManager.startBGM();
+            
+            let minsConfig = parseInt(document.getElementById('timer-input').value) || 10;
+            totalTimeConfig = minsConfig * 60;
+            timeRemaining = totalTimeConfig;
+            
+            teamScore = 0;
+            document.getElementById('current-score-display').innerText = teamScore;
+
+            clearInterval(timerInterval); updateTimer();
+            timerInterval = setInterval(() => { 
+                timeRemaining--; 
+                updateTimer(); 
+                if (timeRemaining <= 0) triggerGameOver(); 
+            }, 1000);
+
+            initSubRound();
+        }
+
+        function initSubRound() {
+            const board = document.getElementById('game-board'); board.innerHTML = ''; 
+            firstCard = null; secondCard = null; lockBoard = false;
+            pairsMatchedInCurrentRound = 0;
+
+            let selected = [];
+            let shuffledProfs = [...profsData].sort(() => 0.5 - Math.random());
+            if (shuffledProfs.length > 0) {
+                while(selected.length < 10) {
+                    for(let p of shuffledProfs) {
+                        if(selected.length < 10) selected.push(p);
+                    }
+                }
+            }
+
+            gameDeck = [...selected, ...selected].sort(() => 0.5 - Math.random());
+
+            gameDeck.forEach(prof => {
+                const wrapper = document.createElement('div'); wrapper.className = 'w-full h-full flex items-center justify-center';
+                const card = document.createElement('div');
+                card.className = 'memory-card relative w-full h-full rounded-xl shadow-md border border-slate-200 bg-white';
+                card.dataset.id = prof.id; card.dataset.name = prof.name; card.dataset.subject = prof.subject;
+
+                card.innerHTML = `
+                    <div class="front-face flex flex-col p-0 rounded-xl overflow-hidden bg-white">
+                        <div class="w-full h-3/5 md:h-2/3 bg-slate-50 border-b border-slate-200 p-1 relative flex items-center justify-center">
+                            <img src="${prof.img}" class="absolute inset-1 w-[calc(100%-8px)] h-[calc(100%-8px)] object-contain">
+                        </div>
+                        <div class="w-full h-2/5 md:h-1/3 flex flex-col justify-center items-center p-1 text-center overflow-hidden">
+                            <div class="font-black text-xs md:text-sm text-slate-800 line-clamp-1 w-full truncate">${prof.name}</div>
+                            <div class="text-[9px] md:text-xs text-blue-600 font-bold mt-0.5 line-clamp-1 w-full truncate">${prof.subject}</div>
+                        </div>
+                    </div>
+                    <div class="back-face rounded-xl">🎓</div>
+                `;
+                card.onclick = function() {
+                    if (lockBoard || this.classList.contains('flipped') || this === firstCard) return;
+                    this.classList.add('flipped'); SoundManager.play('flip');
+                    if (!firstCard) { firstCard = this; return; }
+                    secondCard = this;
+                    firstCard.dataset.id === secondCard.dataset.id ? disableCards() : unflipCards();
+                };
+                wrapper.appendChild(card); board.appendChild(wrapper);
+            });
+        }
+
+        function disableCards() {
+            SoundManager.play('match'); lockBoard = true; 
+            let name = firstCard.dataset.name, sub = firstCard.dataset.subject;
+            firstCard.onclick = null; secondCard.onclick = null;
+            
+            pairsMatchedInCurrentRound++;
+            firstCard = null; secondCard = null;
+
+            setTimeout(() => {
+                if (pairsMatchedInCurrentRound === 3) {
+                    teamScore++;
+                    document.getElementById('current-score-display').innerText = teamScore;
+                    SoundManager.play('win');
+                    
+                    if (timeRemaining > 0) {
+                        document.getElementById('next-player-modal').classList.remove('hidden'); 
+                        document.getElementById('next-player-modal').classList.add('flex');
+                    }
+                } else {
+                    document.getElementById('modal-prof-name').innerText = name; document.getElementById('modal-prof-subject').innerText = sub;
+                    document.getElementById('info-modal').classList.remove('hidden'); document.getElementById('info-modal').classList.add('flex');
+                }
+            }, 400);
+        }
+
+        function unflipCards() {
+            lockBoard = true; SoundManager.play('fail');
+            setTimeout(() => {
+                if(firstCard) firstCard.classList.remove('flipped'); if(secondCard) secondCard.classList.remove('flipped');
+                firstCard = null; secondCard = null; lockBoard = false;
+            }, 800);
+        }
+
+        document.getElementById('enter-game-btn').onclick = () => {
+            if(profsData.length < 2) return showMsg("請先新增至少兩位教授資料！");
+            setupScreen.classList.add('hidden'); setupScreen.classList.remove('flex');
+            renderLeaderboard();
+            document.getElementById('player-name-input').value = '';
+            playerScreen.classList.remove('hidden'); playerScreen.classList.add('flex');
+        };
+
+        document.getElementById('back-to-setup-from-player').onclick = () => {
+            playerScreen.classList.add('hidden'); playerScreen.classList.remove('flex');
+            setupScreen.classList.remove('hidden'); setupScreen.classList.add('flex');
+        };
+
+        document.getElementById('submit-player-btn').onclick = () => {
+            currentTeamName = document.getElementById('player-name-input').value.trim();
+            if (!currentTeamName) return showMsg("請先輸入組別或隊伍名稱！");
+            
+            SoundManager.unlockAll(); 
+            playerScreen.classList.add('hidden'); playerScreen.classList.remove('flex');
+            document.getElementById('rules-display-content').innerHTML = ruleEditor.innerHTML;
+            document.getElementById('rules-modal').classList.remove('hidden'); document.getElementById('rules-modal').classList.add('flex');
+        };
+
+        document.getElementById('start-countdown-btn').onclick = () => {
+            document.getElementById('rules-modal').classList.add('hidden'); document.getElementById('rules-modal').classList.remove('flex');
+            gameScreen.classList.remove('hidden'); gameScreen.classList.add('flex');
+            
+            history.pushState(null, null, location.href);
+            startGame();
+        };
+
+        document.getElementById('next-player-btn').onclick = () => {
+            document.getElementById('next-player-modal').classList.add('hidden'); 
+            document.getElementById('next-player-modal').classList.remove('flex');
+            initSubRound();
+        };
+
+        const goToLobby = () => {
+            isGameRunning = false; SoundManager.stopBGM();
+            clearInterval(timerInterval); hideModals();
+            gameScreen.classList.add('hidden'); gameScreen.classList.remove('flex');
+            renderLeaderboard();
+            document.getElementById('player-name-input').value = '';
+            playerScreen.classList.remove('hidden'); playerScreen.classList.add('flex');
+        };
+        
+        document.getElementById('back-to-lobby-btn').onclick = () => {
+            showMsg("確定要提前結束這組的挑戰並結算成績嗎？", true, () => {
+                triggerGameOver();
+            });
+        };
+        document.getElementById('final-lobby-btn').onclick = goToLobby;
+
+        document.getElementById('music-toggle-btn').onclick = () => SoundManager.toggleMute();
+        
+        document.getElementById('continue-btn').onclick = () => { document.getElementById('info-modal').classList.add('hidden'); document.getElementById('info-modal').classList.remove('flex'); setTimeout(() => lockBoard = false, 100); };
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSys = localStorage.getItem('ksu_sys_data');
+            if (savedSys) {
+                try {
+                    const data = JSON.parse(savedSys);
+                    profsData = data.profs || [];
+                    if (data.rules) ruleEditor.innerHTML = data.rules;
+                    if (data.gameTime) document.getElementById('timer-input').value = data.gameTime;
+                } catch(e) {}
+            }
+
+            // 新增：美化版預設規則 (列印海報級排版)
+            if(!ruleEditor.innerHTML.trim() || ruleEditor.innerHTML.includes('🎯 遊戲說明')) {
+                ruleEditor.innerHTML = `
+                <div style="text-align: center; padding: 40px 30px; border: 6px dashed #3b82f6; border-radius: 20px; background-color: #f0f9ff; max-width: 800px; margin: 0 auto;">
+                    <h1 style="font-size: 3em; color: #1e3a8a; font-weight: 900; margin-bottom: 10px; letter-spacing: 2px;">名師解碼・團隊接力</h1>
+                    <h2 style="font-size: 1.8em; color: #0284c7; margin-bottom: 30px; font-weight: bold;">🎯 挑戰規則說明</h2>
+                    <ul style="font-size: 1.4em; text-align: left; line-height: 2; list-style-type: none; padding: 0; margin: 0 auto; max-width: 650px;">
+                        <li style="margin-bottom: 20px;">🏃‍♂️ <b style="color:#1d4ed8;">分組接力：</b>這是一個考驗默契與記憶的【分組接力】遊戲！</li>
+                        <li style="margin-bottom: 20px;">🧠 <b style="color:#1d4ed8;">過關條件：</b>只要在畫面上成功配對出 <b style="color:#ef4444; font-size: 1.3em;">3 組</b> 教授，即可通關並立即交棒給下一位隊員。</li>
+                        <li style="margin-bottom: 20px;">🏆 <b style="color:#1d4ed8;">終極目標：</b>在限時內，全隊累積過關次數越多的隊伍，將榮登英雄榜最高榮耀！</li>
+                        <li style="margin-bottom: 15px; background: #fee2e2; padding: 20px; border-radius: 12px; margin-top: 30px; border: 2px solid #f87171;">⚠️ <b style="color:#b91c1c;">特別注意：</b>時間寶貴，請發揮團隊最強記憶力，以最快速度交棒吧！</li>
+                    </ul>
+                </div>`;
+            }
+            
+            renderList();
+        });
+
+        // 新增：一鍵列印規則海報功能
+        window.printRules = function() {
+            const printContent = document.getElementById('rule-editor').innerHTML;
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = printContent;
+            printArea.classList.remove('hidden');
+            window.print();
+            printArea.classList.add('hidden');
+        };
+
+        window.addEventListener('popstate', function(event) {
+            if (isGameRunning) {
+                history.pushState(null, null, location.href);
+                showMsg("遊戲正在進行中，確定要提前結束這組的挑戰並結算成績嗎？", true, () => {
+                    triggerGameOver();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
